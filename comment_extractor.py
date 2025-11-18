@@ -11,14 +11,13 @@ from text_validator import (
 )
 
 
-def extract_initial_comments(driver, comments_container, processed_comments, raw_output_file=None):
+def extract_initial_comments(driver, comments_container, raw_output_file=None):
     """
     Extract initial comments before any scrolling
     
     Args:
         driver: WebDriver instance
         comments_container: Comments container element (can be None)
-        processed_comments (set): Set to track processed comments
         raw_output_file (str, optional): Path to file for writing raw comments
         
     Returns:
@@ -30,19 +29,18 @@ def extract_initial_comments(driver, comments_container, processed_comments, raw
         #     with open(raw_output_file, 'w', encoding='utf-8') as f:
         #         f.write("=== RAW COMMENT EXTRACTION LOG ===\n")
         #         f.write("=== INITIAL EXTRACTION ===\n")
-        return extract_comments_from_container(comments_container, processed_comments, raw_output_file)
+        return extract_comments_from_container(comments_container, raw_output_file)
     else:
         print("No container found, extracting from entire page")
-        return extract_comments_fallback(driver, processed_comments)
+        return extract_comments_fallback(driver)
 
 
-def extract_comments_from_container(container, processed_comments, raw_output_file=None):
+def extract_comments_from_container(container, raw_output_file=None):
     """
     Extract comments from a specific container
     
     Args:
         container: WebElement container to extract from
-        processed_comments (set): Set to track processed comments
         raw_output_file (str, optional): Path to file for writing raw comments
         
     Returns:
@@ -87,8 +85,7 @@ def extract_comments_from_container(container, processed_comments, raw_output_fi
                 #         f.write(f"RAW: {username} -> {comment_text}\n")
                 
                 if comment_text and is_valid_username_comment_pair(username, comment_text):
-                    if _add_unique_comment(username, comment_text, processed_comments, 
-                                         user_names, user_comments, comment_likes):
+                    if _add_comment(username, comment_text, user_names, user_comments, comment_likes):
                         print(f"  {username}: {comment_text[:60]}...")
                         # if raw_output_file:
                         #     with open(raw_output_file, 'a', encoding='utf-8') as f:
@@ -103,13 +100,12 @@ def extract_comments_from_container(container, processed_comments, raw_output_fi
     return user_names, user_comments, comment_likes
 
 
-def extract_comments_fallback(driver, processed_comments):
+def extract_comments_fallback(driver):
     """
     Fallback extraction method for when no container is found
     
     Args:
         driver: WebDriver instance
-        processed_comments (set): Set to track processed comments
         
     Returns:
         tuple: (usernames, comments, likes) lists
@@ -138,8 +134,7 @@ def extract_comments_fallback(driver, processed_comments):
             potential_comment = meaningful_texts[i + 1]
             
             if is_valid_username_comment_pair(potential_username, potential_comment):
-                if _add_unique_comment(potential_username, potential_comment, processed_comments,
-                                     user_names, user_comments, comment_likes):
+                if _add_comment(potential_username, potential_comment, user_names, user_comments, comment_likes):
                     print(f" {potential_username}: {potential_comment[:60]}...")
                     i += 2  # Skip both texts
                     continue
@@ -152,7 +147,7 @@ def extract_comments_fallback(driver, processed_comments):
     return user_names, user_comments, comment_likes
 
 
-def scroll_and_extract_comments(driver, comments_container, num_scrolls, processed_comments, raw_output_file=None):
+def scroll_and_extract_comments(driver, comments_container, num_scrolls, raw_output_file=None):
     """
     Scroll the container and extract comments after each scroll
     
@@ -160,7 +155,6 @@ def scroll_and_extract_comments(driver, comments_container, num_scrolls, process
         driver: WebDriver instance
         comments_container: Comments container element (can be None)
         num_scrolls (int): Number of scroll iterations
-        processed_comments (set): Set to track processed comments
         raw_output_file (str, optional): Path to file for writing raw comments
         
     Returns:
@@ -207,7 +201,7 @@ def scroll_and_extract_comments(driver, comments_container, num_scrolls, process
         # if raw_output_file:
         #     with open(raw_output_file, 'a', encoding='utf-8') as f:
         #         f.write(f"\n=== SCROLL {i+1} - Height: {initial_height}px -> {new_height}px ===\n")
-        new_names, new_comments, new_likes = extract_comments_from_container(comments_container, processed_comments, raw_output_file)
+        new_names, new_comments, new_likes = extract_comments_from_container(comments_container, raw_output_file)
         
         # Add to collections
         all_names.extend(new_names)
@@ -267,7 +261,7 @@ def _extract_comment_text_from_parent(parent, username):
         for span in all_spans:
             text = span.text.strip()
             if (text and text != username and 
-                is_valid_text(text, min_length=5) and
+                is_valid_text(text, min_length=2) and
                 len(text) > len(comment_text)):
                 comment_text = text
         
@@ -276,29 +270,24 @@ def _extract_comment_text_from_parent(parent, username):
         return ""
 
 
-def _add_unique_comment(username, comment, processed_comments, user_names, user_comments, comment_likes):
+def _add_comment(username, comment, user_names, user_comments, comment_likes):
     """
-    Add comment if it's unique (not already processed)
+    Add comment without duplicate checking
     
     Args:
         username (str): Username
         comment (str): Comment text
-        processed_comments (set): Set of processed comment keys
         user_names (list): List to add username to
         user_comments (list): List to add comment to
         comment_likes (list): List to add likes to
         
     Returns:
-        bool: True if comment was added, False if duplicate
+        bool: True (always adds comment)
     """
-    comment_key = create_comment_key(username, comment)
-    if comment_key not in processed_comments:
-        user_names.append(username)
-        user_comments.append(clean_comment_text(comment))
-        comment_likes.append(0)
-        processed_comments.add(comment_key)
-        return True
-    return False
+    user_names.append(username)
+    user_comments.append(clean_comment_text(comment))
+    comment_likes.append(0)
+    return True
 
 
 

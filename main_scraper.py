@@ -69,7 +69,6 @@ def main():
         all_usernames = []
         all_comments = []
         all_likes = []
-        processed_comments = set()
         
         print(f"\n{'='*60}")
         print("STEP-BY-STEP COMMENT EXTRACTION")
@@ -90,7 +89,7 @@ def main():
         raw_output_file = None
         
         initial_names, initial_comments, initial_likes = extract_initial_comments(
-            driver, comments_container, processed_comments, raw_output_file
+            driver, comments_container, raw_output_file
         )
         
         all_usernames.extend(initial_names)
@@ -102,7 +101,7 @@ def main():
         # Step 5: Scroll and extract more comments if requested
         if num_scrolls > 0:
             scroll_names, scroll_comments, scroll_likes = scroll_and_extract_comments(
-                driver, comments_container, num_scrolls, processed_comments, raw_output_file
+                driver, comments_container, num_scrolls, raw_output_file
             )
             all_usernames.extend(scroll_names)
             all_comments.extend(scroll_comments)
