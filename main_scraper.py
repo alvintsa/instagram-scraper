@@ -20,16 +20,20 @@ from page_navigator import navigate_to_post, find_comments_container
 
 def validate_arguments():
     """Validate command line arguments"""
-    if len(sys.argv) != 3:
-        print("Usage: python main_scraper.py <instagram_post_url> <number_of_scrolls>")
+    if len(sys.argv) < 3 or len(sys.argv) > 4:
+        print("Usage: python main_scraper.py <instagram_post_url> <number_of_scrolls> [output_filename]")
         print("Example: python main_scraper.py https://www.instagram.com/reel/ABC123/ 5")
+        print("Example: python main_scraper.py https://www.instagram.com/reel/ABC123/ 5 my_comments.csv")
         sys.exit(1)
     
     try:
         num_scrolls = int(sys.argv[2])
         if num_scrolls < 0:
             raise ValueError("Number of scrolls must be non-negative")
-        return sys.argv[1], num_scrolls
+        
+        # Optional filename parameter
+        filename = sys.argv[3] if len(sys.argv) == 4 else None
+        return sys.argv[1], num_scrolls, filename
     except ValueError as e:
         print(f"Invalid number of scrolls: {e}")
         sys.exit(1)
@@ -41,7 +45,7 @@ def main():
     load_dotenv()
     
     # Validate arguments
-    post_url, num_scrolls = validate_arguments()
+    post_url, num_scrolls, custom_filename = validate_arguments()
     
     # Setup browser
     driver, wait = setup_browser(headless=False)
@@ -106,7 +110,7 @@ def main():
         
         # Step 6: Print results and export
         print_results_summary(all_usernames, all_comments)
-        export_to_csv(all_usernames, all_comments, all_likes)
+        export_to_csv(all_usernames, all_comments, all_likes, custom_filename)
         
     except Exception as e:
         print(f"\nAn error occurred: {e}")

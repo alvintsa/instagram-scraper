@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 
 
-def export_to_csv(usernames, comments, likes):
+def export_to_csv(usernames, comments, likes, custom_filename=None):
     """
     Export comments to CSV file
     
@@ -16,6 +16,7 @@ def export_to_csv(usernames, comments, likes):
         usernames (list): List of usernames
         comments (list): List of comments
         likes (list): List of like counts
+        custom_filename (str, optional): Custom filename to use
         
     Returns:
         str or None: Filename if successful, None if failed
@@ -24,9 +25,12 @@ def export_to_csv(usernames, comments, likes):
         print("\n❌ No comments to export")
         return None
     
-    # Create filename with timestamp
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    csv_filename = f"instagram_comments_{timestamp}.csv"
+    # Use custom filename or create one with timestamp
+    if custom_filename:
+        csv_filename = custom_filename if custom_filename.endswith('.csv') else f"{custom_filename}.csv"
+    else:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        csv_filename = f"instagram_comments_{timestamp}.csv"
     
     try:
         with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
