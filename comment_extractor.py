@@ -267,7 +267,7 @@ def _extract_comment_text_from_parent(parent, username):
         for span in all_spans:
             text = span.text.strip()
             if (text and text != username and 
-                is_valid_text(text, min_length=2) and
+                is_valid_text(text, min_length=5) and
                 len(text) > len(comment_text)):
                 comment_text = text
         
@@ -291,16 +291,15 @@ def _add_unique_comment(username, comment, processed_comments, user_names, user_
     Returns:
         bool: True if comment was added, False if duplicate
     """
-    # comment_key = create_comment_key(username, comment)
-    # if comment_key not in processed_comments:
-    #     user_names.append(username)
-    #     user_comments.append(clean_comment_text(comment))
-    #     comment_likes.append(0)
-    #     processed_comments.add(comment_key)
-    #     return True
-    # return False
-    
-    return True
+    comment_key = create_comment_key(username, comment)
+    if comment_key not in processed_comments:
+        user_names.append(username)
+        user_comments.append(clean_comment_text(comment))
+        comment_likes.append(0)
+        processed_comments.add(comment_key)
+        return True
+    return False
+
 
 
 def _is_at_bottom(driver, container):

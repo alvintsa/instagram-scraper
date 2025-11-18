@@ -81,8 +81,8 @@ def is_valid_comment(comment, username=""):
     
     # Comment validation
     if (
-        # (username and len(comment) <= len(username)) or
-        # (username and username == comment) or
+        (username and len(comment) <= len(username)) or
+        (username and username == comment) or
         comment.startswith('Follow')):
         return False
     
