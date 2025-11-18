@@ -2,6 +2,15 @@
 REM Instagram Scraper - Multiple Commands Runner
 REM Edit the URLs and parameters below to customize your runs
 
+REM Activate conda environment (change 'base' to your environment name)
+echo Activating conda environment...
+call conda activate 11_10_scraper
+if errorlevel 1 (
+    echo Failed to activate conda environment. Make sure conda is installed and in PATH.
+    pause
+    exit /b 1
+)
+
 set LOGFILE=batch_run_log.txt
 echo. > %LOGFILE%
 echo ======================================== >> %LOGFILE%
