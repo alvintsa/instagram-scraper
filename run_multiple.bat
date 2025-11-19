@@ -27,7 +27,7 @@ echo.
 REM Command 1
 echo Running Command 1...
 echo Running Command 1... >> %LOGFILE%
-python main_scraper.py "https://www.instagram.com/reel/DQNbQ9jEbAb/?igsh=MW9mbDlyMHBrbzJ4dw%3D%3D" 70 aaron_1
+python main_scraper.py "https://www.instagram.com/reel/DQNbQ9jEbAb/?utm_source=ig_web_button_share_sheet" 70 aaron_1
 echo Finished Command 1
 echo Finished Command 1 >> %LOGFILE%
 echo. >> %LOGFILE%

@@ -191,16 +191,32 @@ def scroll_and_extract_comments(driver, comments_container, num_scrolls, process
         driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", comments_container)
         print(f"  📜 Scrolled to bottom (height: {initial_height}px)")
         
-        # Wait for new content
-        time.sleep(4)
+        # Wait for new content with progressive waiting
+        time.sleep(3)
         
-        # Check if new content loaded
+        # Check if new content loaded with retry logic
         new_height = driver.execute_script("return arguments[0].scrollHeight;", comments_container)
         print(f" New height: {new_height}px")
         
+        # If no height change, try waiting longer and checking again
         if new_height == initial_height:
-            print("   No new content loaded, stopping early")
-            break
+            print("   No immediate height change, waiting longer...")
+            time.sleep(3)  # Wait additional time
+            new_height = driver.execute_script("return arguments[0].scrollHeight;", comments_container)
+            print(f" Height after extra wait: {new_height}px")
+            
+            # If still no change, try one more scroll attempt
+            if new_height == initial_height:
+                print("   Trying additional scroll...")
+                driver.execute_script("arguments[0].scrollTop = arguments[0].scrollHeight;", comments_container)
+                time.sleep(2)
+                new_height = driver.execute_script("return arguments[0].scrollHeight;", comments_container)
+                print(f" Height after extra scroll: {new_height}px")
+                
+                # Only stop if we've tried multiple times and are near the end
+                if new_height == initial_height and i > (num_scrolls * 0.1):  # Allow early stopping only after 10% of scrolls
+                    print("   No new content after retries, stopping early")
+                    break
         
         # Extract new comments
         print("  🔍 Extracting new comments...")
@@ -217,8 +233,8 @@ def scroll_and_extract_comments(driver, comments_container, num_scrolls, process
         new_count = len(all_names) - initial_count
         print(f" Extracted {new_count} new comments (Total: {len(all_names)})")
         
-        # Check if reached bottom
-        if _is_at_bottom(driver, comments_container):
+        # Check if reached bottom (only stop if we're well into scrolling)
+        if i > (num_scrolls * 0.2) and _is_at_bottom(driver, comments_container):  # Only after 20% of scrolls
             print("  🏁 Reached bottom of comments container")
             break
     
@@ -313,7 +329,18 @@ def _is_at_bottom(driver, container):
     Returns:
         bool: True if at bottom, False otherwise
     """
-    scroll_top = driver.execute_script("return arguments[0].scrollTop;", container)
-    client_height = driver.execute_script("return arguments[0].clientHeight;", container)
-    scroll_height = driver.execute_script("return arguments[0].scrollHeight;", container)
-    return scroll_top + client_height >= scroll_height - 10
+    try:
+        scroll_top = driver.execute_script("return arguments[0].scrollTop;", container)
+        client_height = driver.execute_script("return arguments[0].clientHeight;", container)
+        scroll_height = driver.execute_script("return arguments[0].scrollHeight;", container)
+        
+        # More generous bottom detection (within 50px instead of 10px)
+        is_at_bottom = scroll_top + client_height >= scroll_height - 50
+        
+        if is_at_bottom:
+            print(f"    Bottom check: scroll_top={scroll_top}, client_height={client_height}, scroll_height={scroll_height}")
+        
+        return is_at_bottom
+    except Exception as e:
+        print(f"    Error checking bottom: {e}")
+        return False

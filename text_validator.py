@@ -15,7 +15,7 @@ FOOTER_TERMS = {
 }
 
 
-def is_valid_text(text, min_length=2):
+def is_valid_text(text, min_length=1):
     """
     Check if text is valid and meaningful
     
@@ -56,9 +56,8 @@ def is_valid_username(username):
     if not username:
         return False
     
-    # Username validation
-    if (len(username) > 30 or len(username) < 2 or 
-        username.startswith('@') or username.endswith('Follow') or
+    # Very basic username validation - only reject obvious system terms
+    if (len(username) > 50 or len(username) < 1 or 
         username in FOOTER_TERMS):
         return False
     
@@ -79,11 +78,8 @@ def is_valid_comment(comment, username=""):
     if not comment:
         return False
     
-    # Comment validation
-    if (
-        (username and len(comment) <= len(username)) or
-        (username and username == comment) or
-        comment.startswith('Follow')):
+    # Only reject if username exactly equals comment (duplicate)
+    if username and username == comment:
         return False
     
     return True
