@@ -3,15 +3,15 @@
 # Edit the URLs and parameters below to customize your runs
 
 # Activate conda environment (change 'base' to your environment name)
-echo "Activating conda environment..."
-source ~/miniconda3/etc/profile.d/conda.sh 2>/dev/null || source ~/anaconda3/etc/profile.d/conda.sh 2>/dev/null
-conda activate ig_comm_env
-if [ $? -ne 0 ]; then
-    echo "Failed to activate conda environment. Make sure conda is installed."
-    echo "You may need to run: conda init bash"
-    read -p "Press Enter to exit..."
-    exit 1
-fi
+# echo "Activating conda environment..."
+# source ~/miniconda3/etc/profile.d/conda.sh 2>/dev/null || source ~/anaconda3/etc/profile.d/conda.sh 2>/dev/null
+# conda activate ig_comm_env
+# if [ $? -ne 0 ]; then
+#     echo "Failed to activate conda environment. Make sure conda is installed."
+#     echo "You may need to run: conda init bash"
+#     read -p "Press Enter to exit..."
+#     exit 1
+# fi
 
 LOGFILE="batch_run_log.txt"
 echo "" > "$LOGFILE"
