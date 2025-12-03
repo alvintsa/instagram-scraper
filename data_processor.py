@@ -8,7 +8,7 @@ import time
 from datetime import datetime
 
 
-def export_to_csv(usernames, comments, likes, custom_filename=None):
+def export_to_csv(usernames, comments, likes, custom_filename=None, post_metadata=None):
     """
     Export comments to CSV file
     
@@ -17,6 +17,7 @@ def export_to_csv(usernames, comments, likes, custom_filename=None):
         comments (list): List of comments
         likes (list): List of like counts
         custom_filename (str, optional): Custom filename to use
+        post_metadata (dict, optional): Post metadata including caption and date
         
     Returns:
         str or None: Filename if successful, None if failed
@@ -35,6 +36,19 @@ def export_to_csv(usernames, comments, likes, custom_filename=None):
     try:
         with open(csv_filename, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
+            
+            # Write metadata section if available
+            if post_metadata:
+                writer.writerow(['=== POST METADATA ==='])
+                writer.writerow(['Post URL', post_metadata.get('post_url', '')])
+                writer.writerow(['Post Type', post_metadata.get('post_type', '')])
+                writer.writerow(['Post Caption', post_metadata.get('caption', '')])
+                writer.writerow(['Post Date', post_metadata.get('date', '')])
+                writer.writerow(['Extracted At', post_metadata.get('extraction_time', '')])
+                writer.writerow([])  # Empty row separator
+            
+            # Write comments header and data
+            writer.writerow(['=== COMMENTS ==='])
             writer.writerow(['Username', 'Comment', 'Likes'])
             
             for i in range(len(usernames)):
@@ -42,6 +56,8 @@ def export_to_csv(usernames, comments, likes, custom_filename=None):
         
         print(f"\nComments exported to {csv_filename} successfully!")
         print(f"   Total comments saved: {len(usernames)}")
+        if post_metadata:
+            print(f"   Post metadata included: {'✅ Caption' if post_metadata.get('caption') else '❌ Caption'}, {'✅ Date' if post_metadata.get('date') else '❌ Date'}")
         return csv_filename
     
     except Exception as e:

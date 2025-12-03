@@ -87,9 +87,13 @@ def extract_comments_from_container(container, processed_comments, raw_output_fi
                 #         f.write(f"RAW: {username} -> {comment_text}\n")
                 
                 if comment_text and is_valid_username_comment_pair(username, comment_text):
+                    # Extract likes count from parent
+                    likes_count = _extract_comment_likes(parent)
+                    
                     if _add_unique_comment(username, comment_text, processed_comments, 
-                                         user_names, user_comments, comment_likes):
-                        print(f"  {username}: {comment_text[:60]}...")
+                                         user_names, user_comments, comment_likes, likes_count):
+                        likes_display = f" ({likes_count} likes)" if likes_count > 0 else ""
+                        print(f"  {username}: {comment_text[:60]}...{likes_display}")
                         # if raw_output_file:
                         #     with open(raw_output_file, 'a', encoding='utf-8') as f:
                         #         f.write(f"ACCEPTED: {username} -> {comment_text}\n")
@@ -139,7 +143,7 @@ def extract_comments_fallback(driver, processed_comments):
             
             if is_valid_username_comment_pair(potential_username, potential_comment):
                 if _add_unique_comment(potential_username, potential_comment, processed_comments,
-                                     user_names, user_comments, comment_likes):
+                                     user_names, user_comments, comment_likes, 0):  # Fallback method can't extract likes easily
                     print(f" {potential_username}: {potential_comment[:60]}...")
                     i += 2  # Skip both texts
                     continue
@@ -292,7 +296,145 @@ def _extract_comment_text_from_parent(parent, username):
         return ""
 
 
-def _add_unique_comment(username, comment, processed_comments, user_names, user_comments, comment_likes):
+def _extract_comment_likes(parent):
+    """
+    Extract likes count from comment parent container
+    
+    Args:
+        parent: WebElement parent container
+        
+    Returns:
+        int: Number of likes if found, 0 otherwise
+    """
+    try:
+        # Strategy 1: Look for exact Instagram likes span pattern
+        try:
+            like_spans = parent.find_elements(By.XPATH, ".//span[contains(text(), 'like') or contains(text(), 'Like')]")
+            for span in like_spans:
+                text = span.text.strip()
+                if text and ("like" in text.lower() or "Like" in text):
+                    like_count = _extract_number_from_text(text)
+                    if like_count > 0:  # Only return if we found actual likes
+                        return like_count
+        except Exception:
+            pass
+        
+        # Strategy 2: Look in sibling/nearby elements for likes
+        try:
+            # Go up to find a broader container that might have likes info
+            current = parent
+            for level in range(3):  # Check parent and grandparent levels
+                # Look for any element with like-related text
+                all_elements = current.find_elements(By.XPATH, ".//*[contains(text(), 'like') or contains(text(), 'Like')]")
+                for elem in all_elements:
+                    text = elem.text.strip()
+                    if text and ("like" in text.lower() or "Like" in text):
+                        like_count = _extract_number_from_text(text)
+                        if like_count > 0:
+                            return like_count
+                
+                # Move up one level
+                try:
+                    current = current.find_element(By.XPATH, "./..")
+                except:
+                    break
+        except Exception:
+            pass
+        
+        # Strategy 3: Look for buttons or clickable elements that might show likes
+        try:
+            buttons = parent.find_elements(By.XPATH, ".//button | .//div[@role='button']")
+            for button in buttons:
+                # Check aria-label
+                aria_label = button.get_attribute("aria-label")
+                if aria_label and "like" in aria_label.lower():
+                    like_count = _extract_number_from_text(aria_label)
+                    if like_count > 0:
+                        return like_count
+                
+                # Check text content
+                text = button.text.strip()
+                if text and "like" in text.lower():
+                    like_count = _extract_number_from_text(text)
+                    if like_count > 0:
+                        return like_count
+        except Exception:
+            pass
+        
+        # Strategy 4: Instagram class-based search
+        try:
+            class_selectors = [
+                "span.x1lliihq.x193iq5w.x6ikm8r.x10wlt62.xlyipyv.xuxw1ft",
+                "span[class*='x1lliihq']",
+                "span[class*='x193iq5w']",
+            ]
+            
+            for selector in class_selectors:
+                elements = parent.find_elements(By.CSS_SELECTOR, selector)
+                for element in elements:
+                    text = element.text.strip()
+                    if text and "like" in text.lower():
+                        like_count = _extract_number_from_text(text)
+                        if like_count > 0:
+                            return like_count
+        except Exception:
+            pass
+                
+        return 0
+    except Exception:
+        return 0
+
+
+def _extract_number_from_text(text):
+    """
+    Extract numeric value from text (handles K, M suffixes)
+    
+    Args:
+        text (str): Text containing number
+        
+    Returns:
+        int: Extracted number, 0 if none found
+    """
+    import re
+    
+    if not text:
+        return 0
+        
+    # Remove common words and clean text
+    clean_text = re.sub(r'\b(like|likes|others?)\b', '', text.lower()).strip()
+    
+    # Look for numbers with K/M suffixes
+    match = re.search(r'([0-9,]+\.?[0-9]*)[\s]?([kmb])?', clean_text)
+    if match:
+        number_str = match.group(1).replace(',', '')
+        suffix = match.group(2)
+        
+        try:
+            number = float(number_str)
+            
+            if suffix == 'k':
+                number *= 1000
+            elif suffix == 'm':
+                number *= 1000000
+            elif suffix == 'b':
+                number *= 1000000000
+                
+            return int(number)
+        except ValueError:
+            pass
+    
+    # Look for plain numbers
+    numbers = re.findall(r'\b\d{1,}\b', clean_text)
+    if numbers:
+        try:
+            return int(numbers[0])
+        except ValueError:
+            pass
+    
+    return 0
+
+
+def _add_unique_comment(username, comment, processed_comments, user_names, user_comments, comment_likes, likes_count=0):
     """
     Add comment if it's unique (not already processed)
     
@@ -303,6 +445,7 @@ def _add_unique_comment(username, comment, processed_comments, user_names, user_
         user_names (list): List to add username to
         user_comments (list): List to add comment to
         comment_likes (list): List to add likes to
+        likes_count (int): Number of likes for this comment
         
     Returns:
         bool: True if comment was added, False if duplicate
@@ -311,7 +454,7 @@ def _add_unique_comment(username, comment, processed_comments, user_names, user_
     if comment_key not in processed_comments:
         user_names.append(username)
         user_comments.append(clean_comment_text(comment))
-        comment_likes.append(0)
+        comment_likes.append(likes_count)
         processed_comments.add(comment_key)
         return True
     return False

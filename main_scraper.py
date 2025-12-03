@@ -16,6 +16,7 @@ from comment_extractor import extract_initial_comments, scroll_and_extract_comme
 from data_processor import export_to_csv, print_results_summary, save_debug_info
 from login_handler import login_to_instagram
 from page_navigator import navigate_to_post, find_comments_container
+from post_metadata_extractor import extract_post_metadata
 
 
 def validate_arguments():
@@ -75,11 +76,14 @@ def main():
         print("STEP-BY-STEP COMMENT EXTRACTION")
         print(f"{'='*60}")
         
-        # Step 3: Find comments container
+        # Step 3: Extract post metadata
+        post_metadata = extract_post_metadata(driver, post_url)
+        
+        # Step 4: Find comments container
         comments_container = find_comments_container(driver)
         
-        # Step 4: Extract initial comments BEFORE scrolling
-        print("\nSTEP 1: Extracting initial comments...")
+        # Step 5: Extract initial comments BEFORE scrolling
+        print("\nSTEP 2: Extracting initial comments...")
         time.sleep(3)  # Let content settle
         
         # Create raw output file for debugging
@@ -99,7 +103,7 @@ def main():
         
         print(f"Initial extraction: {len(initial_names)} comments")
         
-        # Step 5: Scroll and extract more comments if requested
+        # Step 6: Scroll and extract more comments if requested
         if num_scrolls > 0:
             scroll_names, scroll_comments, scroll_likes = scroll_and_extract_comments(
                 driver, comments_container, num_scrolls, processed_comments, raw_output_file
@@ -108,9 +112,9 @@ def main():
             all_comments.extend(scroll_comments)
             all_likes.extend(scroll_likes)
         
-        # Step 6: Print results and export
+        # Step 7: Print results and export
         print_results_summary(all_usernames, all_comments)
-        export_to_csv(all_usernames, all_comments, all_likes, custom_filename)
+        export_to_csv(all_usernames, all_comments, all_likes, custom_filename, post_metadata)
         
     except Exception as e:
         print(f"\nAn error occurred: {e}")
