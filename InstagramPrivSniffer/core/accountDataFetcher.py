@@ -10,11 +10,11 @@ from datetime import datetime
 time = datetime.now().strftime("%H:%M:%S")
 
 def fetch_data(username):
-    colorPrint(
-        CYAN, f"[{time()}] \t",
-        GREEN, "[INFO] \t\t\b", 
-        LIGHT_YELLOW_EX, "Fetching only collaborated posts (if available)..."
-    )
+    # colorPrint(
+    #     CYAN, f"[{time()}] \t",
+    #     GREEN, "[INFO] \t\t\b", 
+    #     LIGHT_YELLOW_EX, "Fetching only collaborated posts (if available)..."
+    # )
     
     try:
         url = f"https://www.instagram.com/api/v1/users/web_profile_info/?username={username}"
@@ -30,9 +30,9 @@ def fetch_data(username):
         user_data = response.json()["data"]["user"]
         
         account_type(user_data)
-        post_links = get_posts(user_data)
+        result = get_posts(user_data)
         
-        return post_links
+        return result
         
     except Exception as e:
         colorPrint(
@@ -41,6 +41,8 @@ def fetch_data(username):
             YELLOW, "[WARNING] \t",
             RED, "Failed to fetch account data"
         )
+        return []
+        
 
 
 def error_handler(response):
@@ -83,9 +85,9 @@ def account_type(user_data):
 
 
 def get_posts(user_data):
-    posts = set()
     edges = user_data["edge_owner_to_timeline_media"]["edges"]
-
+    result = []
+    
     if not edges:
         colorPrint(
             CYAN, f"[{time()}] \t",
@@ -93,29 +95,37 @@ def get_posts(user_data):
             RED, "No posts found"
         )
     else:
+        
         for i, post_item in enumerate(edges, 1):
             post_data = post_item["node"]
             post_url = post_data["shortcode"]
             is_video = post_data["is_video"]
             post_owner = post_data["owner"]["username"]
-            # colorPrint(YELLOW, f"+--------------------------------------------------------[{i}]-------------------------------------------------------+\n")
+
+            colorPrint(YELLOW, f"+--------------------------------------------------------[{i}]-------------------------------------------------------+\n")
 
             if is_video:
-                posts.add(f"https://www.instagram.com/{post_owner}/reel/{post_url}")
-
-            else:
-                posts.add(f"https://www.instagram.com/{post_owner}/p/{post_url}")
-
-            for collaborator_item in post_data["edge_media_to_tagged_user"]["edges"]:
-                collaborator_username = collaborator_item["node"]["user"]["username"]
+                result.append(f"https://www.instagram.com/{post_owner}/reel/{post_url}")
                 colorPrint(
                     CYAN, f"[{time()}] \t",
-                    GREEN, "[COLLAB] \t\b",
-                    LIGHT_BLUE_EX, f"https://www.instagram.com/{collaborator_username}"
+                    GREEN, "[VIDEO]  \t\b",
+                    LIGHT_BLUE_EX, f"https://www.instagram.com/{post_owner}/reel/{post_url}"
                 )
+            else:
+                result.append(f"https://www.instagram.com/{post_owner}/p/{post_url}")
+                
+        return result
+
+
+            # for collaborator_item in post_data["edge_media_to_tagged_user"]["edges"]:
+            #     collaborator_username = collaborator_item["node"]["user"]["username"]
+            #     colorPrint(
+            #         CYAN, f"[{time()}] \t",
+            #         GREEN, "[COLLAB] \t\b",
+            #         LIGHT_BLUE_EX, f"https://www.instagram.com/{collaborator_username}"
+            #     )
             
-            print()
-        return posts
+            # print()
 
 def time():
     return datetime.now().strftime("%H:%M:%S")

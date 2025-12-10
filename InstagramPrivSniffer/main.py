@@ -8,17 +8,16 @@ from core.mediaDownloader import download_media
 from lib.banner import printBanner
 from utils.parser import getArguments
 
-args = getArguments()
+def main(args):
 
-if args.name:
-    printBanner()
-    post_links = fetch_data(args.name)
+    if args.name:
+        # printBanner()
+        return fetch_data(args.name)
+    elif args.dload:
+        # printBanner()
+        return download_media(args.dload)
     
-    with open(f"{args.name}.txt", "w") as file:
-        for link in post_links:
-            file.write(link + "\n")
-    
-    
-elif args.dload:
-    printBanner()
-    download_media(args.dload)
+
+if __name__ == "__main__":
+    args = getArguments()
+    main(args)
