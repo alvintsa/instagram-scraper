@@ -30,6 +30,24 @@ def navigate_to_post(driver, post_url):
         print("Failed to navigate to Instagram")
         return False
     
+    # Check if we're on the account page instead of the specific post
+    if "/reel/" in post_url and "/reel/" not in current_url:
+        print("⚠️  WARNING: Redirected to account page instead of specific reel")
+        print(f"   Expected: {post_url}")
+        print(f"   Got: {current_url}")
+        
+        # Try alternative URL format (without trailing parameters)
+        if "?" in post_url:
+            clean_url = post_url.split("?")[0]
+            print(f"🔄 Trying clean URL: {clean_url}")
+            driver.get(clean_url)
+            time.sleep(5)
+            current_url = driver.current_url
+            
+            if "/reel/" not in current_url:
+                print("❌ Still redirected to account page - reel may not exist or be private")
+                return False
+    
     # Try to find article element but don't fail if not found
     try:
         WebDriverWait(driver, 10).until(
